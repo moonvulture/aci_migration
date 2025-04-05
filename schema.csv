@@ -1,0 +1,27 @@
+Old Tenant,Old BD,Old EPG,Old VRF,,New BD,New EPG,New VRF,New tenant,new esg,L3_Out
+Enterprise,BD-VLAN-50,EPG-VLAN50,Enterprise,,Bd-TnG-ENT-DOM,Epg-TnG-ENT-DOM-AD,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-51,EPG-VLAN51,Enterprise,,Bd-TnG-ENT-DOM,Epg-TnG-ENT-DOM-AD,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-52,EPG-VLAN52,Enterprise,,Bd-TnG-ENT-DOM,Epg-TnG-ENT-DOM-DNS,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-53,EPG-VLAN53,Enterprise,,Bd-TnG-ENT-DOM,Epg-TnG-ENT-DOM-DHCP,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-54,EPG-VLAN54,Enterprise,,Bd-TnG-ENT-DOM,Epg-TnG-ENT-DOM-EXCH,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-55,EPG-VLAN55,Enterprise,,Bd-TnG-ENT-NET,Epg-TnG-ENT-NET-ISE,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-56,EPG-VLAN56,Enterprise,,Bd-TnG-ENT-NET,Epg-TnG-ENT-NET-ISE,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-57,EPG-VLAN57,Enterprise,,Bd-TnG-ENT-NET,Epg-TnG-ENT-NET-MGMT,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-58,EPG-VLAN58,Enterprise,,Bd-TnG-ENT-SVC,Epg-TnG-ENT-SVC-WEB,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-59,EPG-VLAN59,Enterprise,,Bd-TnG-ENT-SVC,Epg-TnG-ENT-SVC-DB,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-60,EPG-VLAN60,Enterprise,,Bd-TnG-ENT-SVC,Epg-TnG-ENT-SVC-DB,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-61,EPG-VLAN61,Enterprise,,Bd-TnG-ENT-CLOUD,Epg-TnG-ENT-CLOUD-SHAREPOINT,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-62,EPG-VLAN62,Enterprise,,Bd-TnG-ENT-CLOUD,Epg-TnG-ENT-CLOUD-M365,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-63,EPG-VLAN63,Enterprise,,Bd-TnG-ENT-LINUX,Epg-TnG-ENT-LINUX-RHEL,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-64,EPG-VLAN64,Enterprise,,Bd-TnG-ENT-ACAS,Epg-TnG-ENT-ACAS-TENABLE,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-65,EPG-VLAN65,Enterprise,,Bd-TnG-ENT-HBSS,Epg-TnG-ENT-HBSS-SENSOR,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-66,EPG-VLAN66,Enterprise,,Bg-TnG-ENT-HBSS,Epg-TnG-ENT-HBSS-SENSOR,Vrf-TnG-ENT,Tn-TnG-ENT,?,?
+,,,,,,,,,,
+Enterprise,BD-VLAN-67,EPG-VLAN67,Enterprise,,Bg-TnPOR1-ENT-SVC,Epg-TnPOR1-ENT-AD,Vrf-TnPOR1,Tn-TnPOR1,?,?
+Enterprise,BD-VLAN-68,EPG-VLAN68,Enterprise,,Bg-TnPOR1-ENT-SVC,Epg-TnPOR1-ENT-AD2,Vrf-TnPOR1,Tn-TnPOR1,?,?
+Enterprise,BD-VLAN-69,EPG-VLAN69,Enterprise,,Bg-TnPOR2-SVC1,Epg-TnPOR2-SVC1-WEB,Vrf-TnPOR2,Tn-TnPOR2,?,?
+Enterprise,BD-VLAN-70,EPG-VLAN70,Enterprise,,Bg-TnPOR3-SVC1,Epg-TnPOR3-SVC1-WEB,Vrf-TnPOR3,Tn-TnPOR3,?,?
+,,,,,,,,,,
+Enterprise,BD-VLAN-71,EPG-VLAN71,Enterprise,,Bg-TnG-ENT-VDI,Epg-TnG-ENT-VDI-MASTER,Vrf-TnG-VDI,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-72,EPG-VLAN72,Enterprise,,Bg-TnG-ENT-VDI,Epg-TnG-ENT-VDI-POOL1,Vrf-TnG-VDI,Tn-TnG-ENT,?,?
+Enterprise,BD-VLAN-73,EPG-VLAN73,Enterprise,,Bg-TnG-ENT-VDI,Epg-TnG-ENT-VDI-POOL2,Vrf-TnG-VDI,Tn-TnG-ENT,?,?
