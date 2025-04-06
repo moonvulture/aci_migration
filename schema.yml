@@ -10,6 +10,7 @@ vrfs:
 app_groups:
   GCORP_ENT: &GCORP_ENT_AP Ap-TnGCORP-ENT
   POR_ENT: &POR1_ENT_AP Ap-TnPoR1-ENT
+  GCORP_VDI: &GCORP_VDI_AP Ap-TnGCORP-VDI
 
 #esg based dict
 aci_services:
@@ -125,7 +126,7 @@ aci_services:
       - name: Bd-TnGCORP-ENT-NET
         subnets:
           - { gateway: 220.10.10.1, mask: 24 }
-          - { gateway: 230.10.10.1, mask: 24 }
+          - { gateway: 220.20.10.1, mask: 24 }
           - { gateway: 240.10.10.1, mask: 24 }
     app_group: *GCORP_ENT_AP
     endpoint_group:
@@ -142,7 +143,7 @@ aci_services:
           - { gateway: 250.10.10.1, mask: 24 }
           - { gateway: 10.20.10.1, mask: 24 }
           - { gateway: 10.30.10.1, mask: 24 }
-    app_group: *GCORP_ENT_AP
+    app_group: *GCORP_VDI_AP
     endpoint_group:
       - name: Epg-TnGCORP-ENT-VDI-MASTER
     security_group:

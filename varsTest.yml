@@ -20,12 +20,43 @@
           {{ item }}
           {% endfor %}
 
-    - name: dict test
+    - name: Display VRFs
       ansible.builtin.debug:
         msg: "{{ item.vrf }}, {{ item.tenant }}"
       loop: "{{ aci_services | unique(attribute='vrf') }}"
 
-    - name: dict test 2
+    - name: Display bridge domains
       ansible.builtin.debug:
-        msg: "{{ item.tenant }}"
-      loop: "{{ aci_services | unique(attribute='tenant') }}"
+        msg: |
+          {% for bd in aci_services | map(attribute='bridge_domain') %}
+          {% for item in bd %}
+          {{ item.name }}
+          {% endfor %}
+          {% endfor %}
+
+    - name: Display bd 2
+      ansible.builtin.debug:
+        msg: "{{ item.1.name }}"
+      loop: "{{ aci_services | subelements('bridge_domain') }}"
+      loop_control:
+        label: "{{ item.0.tenant }}/{{ item.1.name }}"
+
+    - name: Flatten bridge domain + subnet list
+      set_fact:
+        bd_subnet_map: "{{ _bd_subnet_map | from_yaml }}"
+      vars:
+        _bd_subnet_map: |-
+          {% for svc in aci_services %}
+          {% for bd in svc.bridge_domain %}
+          {% for subnet in bd.subnets %}
+          - { tenant: {{ svc.tenant | to_json }}, bd: {{ bd.name | to_json }}, gateway: {{ subnet.gateway | to_json }}, mask: {{ subnet.mask | to_json }} }
+          {% endfor %}
+          {% endfor %}
+          {% endfor %}
+
+    - name: Display bd 2
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop: "{{ bd_subnet_map }}"
+      loop_control:
+        label: "{{ item.tenant }}/{{ item.bd }}/{{ item.gateway }}"
