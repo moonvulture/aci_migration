@@ -1,6 +1,5 @@
 ---
-
-- name: Create Target Schema
+- name: Create ACI Services Schema
   hosts: localhost
   connection: local
   gather_facts: no
@@ -13,81 +12,111 @@
     validate_certs: no
 
   tasks:
-
-    - name: Create tenant
+    - name: Create unique tenants
       cisco.aci.aci_tenant:
         host: "{{ apic_host }}"
         username: "{{ username }}"
         password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenant_name }}"
+        tenant: "{{ item }}"
         state: present
       delegate_to: localhost
-      register: tenant_result
+      loop: "{{ aci_services | map(attribute='tenant') | unique }}"
 
-    - name: Create VRF
+    - name: Create unique VRFs for each tenant
       cisco.aci.aci_vrf:
         host: "{{ apic_host }}"
         username: "{{ username }}"
         password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenant_name }}"
-        vrf: "{{ vrf_name }}"
+        tenant: "{{ item.tenant }}"
+        vrf: "{{ item.vrf }}"
         state: present
       delegate_to: localhost
-      register: vrf_result
+      loop: "{{ aci_services }}"
+      loop_control:
+        label: "{{ item.tenant }}/{{ item.vrf }}"
 
-    - name: Create Bridge Domain
+    - name: Create unique bridge domains for each tenant
       cisco.aci.aci_bd:
         host: "{{ apic_host }}"
         username: "{{ username }}"
         password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenant_name }}"
-        bd: "{{ item.name }}"
-        vrf: "{{ vrf_name }}"
+        tenant: "{{ item.0.tenant }}"
+        bd: "{{ item.1.name }}"
+        vrf: "{{ item.0.vrf }}"
         arp_flooding: false
         enable_routing: true
         state: present
       delegate_to: localhost
-      loop: "{{ bridge_domains }}"
+      loop: "{{ aci_services | subelements('bridge_domain') }}"
+      loop_control:
+        label: "{{ item.0.tenant }}/{{ item.1.name }}"
 
-    - name: Add all subnets to each Bridge Domain
+    - name: Add subnets to bridge domains
       cisco.aci.aci_bd_subnet:
         host: "{{ apic_host }}"
         username: "{{ username }}"
         password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenant_name }}"
-        bd: "{{ item.0.name }}"
-        gateway: "{{ item.1.gateway }}"
-        mask: "{{ item.1.mask }}"
+        tenant: "{{ item.0.tenant }}"
+        bd: "{{ item.1.name }}"
+        gateway: "{{ item.2.gateway }}"
+        mask: "{{ item.2.mask }}"
         scope: "private"
         state: present
       delegate_to: localhost
-      loop: "{{ bridge_domains | subelements('subnets') }}"
-    
-    - name: Create Application Profile
+      loop: "{{ aci_services | subelements('bridge_domain') | subelements('subnets') }}"
+      loop_control:
+        label: "{{ item.0.tenant }}/{{ item.1.name }}/{{ item.2.gateway }}/{{ item.2.mask }}"
+
+    - name: Create unique application profiles for each tenant
       cisco.aci.aci_ap:
         host: "{{ apic_host }}"
         username: "{{ username }}"
         password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenant_name }}"
-        app_profile: "{{ ap_name }}"
-        description: "App Profile for Enterprise Services"
+        tenant: "{{ item.tenant }}"
+        app_profile: "{{ item.app_group }}"
+        description: "Application Profile for {{ item.name }}"
         state: present
       delegate_to: localhost
+      loop: "{{ aci_services }}"
+      loop_control:
+        label: "{{ item.tenant }}/{{ item.app_group }}"
+      when: item.app_group is defined
 
-    - name: Create Application EPG
+    - name: Create endpoint groups
       cisco.aci.aci_epg:
         host: "{{ apic_host }}"
         username: "{{ username }}"
         password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenant_name }}"
-        ap: "{{ ap_name }}"
-        epg: "duplication_test"
-        bd: "Enterprise_Services"
+        tenant: "{{ item.0.tenant }}"
+        ap: "{{ item.0.app_group }}"
+        epg: "{{ item.1.name }}"
+        bd: "{{ item.0.bridge_domain[0].name }}"
         state: present
       delegate_to: localhost
+      loop: "{{ aci_services | subelements('endpoint_group') }}"
+      loop_control:
+        label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
+      when: item.0.app_group is defined and item.0.bridge_domain is defined
+
+    - name: Create endpoint security groups
+      cisco.aci.aci_esg:
+        host: "{{ apic_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: "{{ validate_certs }}"
+        tenant: "{{ item.0.tenant }}"
+        ap: "{{ item.0.app_group }}"
+        esg: "{{ item.1.name }}"
+        vrf: "{{ item.0.vrf }}"
+        state: present
+      delegate_to: localhost
+      loop: "{{ aci_services | subelements('security_group') }}"
+      loop_control:
+        label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
+      when: item.0.app_group is defined
