@@ -1,165 +1,178 @@
 ---
+# anchor vars
+tenants:
+  GCORP_ENT: &GCORP_ENT_TN Tn-GCORP-ENT
+  PoR_ENT: &POR1_ENT_TN Tn-PoR1-ENT
+vrfs:
+  GCORP_ENT: &GCORP_ENT_VRF Vrf-TnGCORP-ENT
+  GCORP_VDI: &GCORP_VDI_VRF Vrf-TnGCORP-VDI
+  PoR1_ENT: &POR1_ENT_VRF Vrf-TnPoR1-ENT
+app_groups:
+  GCORP_ENT: &GCORP_ENT_AP Ap-TnGCORP-ENT
+  POR_ENT: &POR1_ENT_AP Ap-TnPoR1-ENT
+
+#esg based dict
 aci_services:
   - name: Active_Directory
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-DOMAIN
+      - name: Bd-TnGCORP-ENT-DOMAIN
         subnets:
           - { gateway: 10.10.10.1, mask: 24 }
           - { gateway: 20.10.10.1, mask: 24 }
           - { gateway: 30.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-DOMAIN-AD
+      - name: Epg-TnGCORP-ENT-DOMAIN-AD
     security_group:
-      - name: Esg-TnGISA-ENT-DOMAIN-AD
-      
+      - name: Esg-TnGCORP-ENT-DOMAIN-AD
+
   - name: Domain Name Service
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-DOMAIN
+      - name: Bd-TnGCORP-ENT-DOMAIN
         subnets:
           - { gateway: 40.10.10.1, mask: 24 }
           - { gateway: 50.10.10.1, mask: 24 }
           - { gateway: 60.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-DOMAIN-DNS
+      - name: Epg-TnGCORP-ENT-DOMAIN-DNS
     security_group:
-      - name: Esg-TnGISA-ENT-DOMAIN-DNS
+      - name: Esg-TnGCORP-ENT-DOMAIN-DNS
 
   - name: DHCP
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-DOMAIN
+      - name: Bd-TnGCORP-ENT-DOMAIN
         subnets:
           - { gateway: 70.10.10.1, mask: 24 }
           - { gateway: 80.10.10.1, mask: 24 }
           - { gateway: 90.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-DOMAIN-DHCP
+      - name: Epg-TnGCORP-ENT-DOMAIN-DHCP
     security_group:
-      - name: Esg-TnGISA-ENT-DOMAIN-DHCP
+      - name: Esg-TnGCORP-ENT-DOMAIN-DHCP
 
   - name: Exchange
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-SERVICES
+      - name: Bd-TnGCORP-ENT-SERVICES
         subnets:
           - { gateway: 100.10.10.1, mask: 24 }
           - { gateway: 110.10.10.1, mask: 24 }
           - { gateway: 120.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-SERVICES-EXCH
+      - name: Epg-TnGCORP-ENT-SERVICES-EXCH
     security_group:
-      - name: Esg-TnGISA-ENT-SERVICES-EXCH
+      - name: Esg-TnGCORP-ENT-SERVICES-EXCH
 
   - name: ACAS
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-ACAS
+      - name: Bd-TnGCORP-ENT-ACAS
         subnets:
           - { gateway: 130.10.10.1, mask: 24 }
           - { gateway: 140.10.10.1, mask: 24 }
           - { gateway: 150.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-ACAS-EPO
+      - name: Epg-TnGCORP-ENT-ACAS-EPO
     security_group:
-      - name: Esg-TnGISA-ENT-ACAS-EPO
+      - name: Esg-TnGCORP-ENT-ACAS-EPO
 
   - name: ACAS
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-ACAS
+      - name: Bd-TnGCORP-ENT-ACAS
         subnets:
           - { gateway: 160.10.10.1, mask: 24 }
           - { gateway: 170.10.10.1, mask: 24 }
           - { gateway: 180.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-ACAS-SENSORS
+      - name: Epg-TnGCORP-ENT-ACAS-SENSORS
     security_group:
-      - name: Esg-TnGISA-ENT-ACAS-SENSORS
+      - name: Esg-TnGCORP-ENT-ACAS-SENSORS
 
   - name: Network Management
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-NET
+      - name: Bd-TnGCORP-ENT-NET
         subnets:
           - { gateway: 190.10.10.1, mask: 24 }
           - { gateway: 200.10.10.1, mask: 24 }
           - { gateway: 210.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-NET-MGMT
+      - name: Epg-TnGCORP-ENT-NET-MGMT
     security_group:
-      - name: Esg-TnGISA-ENT-NET-MGMT
+      - name: Esg-TnGCORP-ENT-NET-MGMT
 
   - name: Network ISE
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-ENT
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_ENT_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-NET
+      - name: Bd-TnGCORP-ENT-NET
         subnets:
           - { gateway: 220.10.10.1, mask: 24 }
           - { gateway: 230.10.10.1, mask: 24 }
           - { gateway: 240.10.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-NET-ISE
+      - name: Epg-TnGCORP-ENT-NET-ISE
     security_group:
-      - name: Esg-TnGISA-ENT-NET-ISE
+      - name: Esg-TnGCORP-ENT-NET-ISE
 
   - name: VDI Master
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-VDI
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_VDI_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-VDI
+      - name: Bd-TnGCORP-ENT-VDI
         subnets:
           - { gateway: 250.10.10.1, mask: 24 }
           - { gateway: 10.20.10.1, mask: 24 }
           - { gateway: 10.30.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-VDI-MASTER
+      - name: Epg-TnGCORP-ENT-VDI-MASTER
     security_group:
-      - name: Esg-TnGISA-ENT-VDI-MASTER
+      - name: Esg-TnGCORP-ENT-VDI-MASTER
 
   - name: VDI Pool
-    tenant: Tn-GISA-ENT
-    vrf: Vrf-TnGISA-VDI
+    tenant: *GCORP_ENT_TN
+    vrf: *GCORP_VDI_VRF
     bridge_domain:
-      - name: Bd-TnGISA-ENT-VDI
+      - name: Bd-TnGCORP-ENT-VDI
         subnets:
           - { gateway: 10.40.10.1, mask: 24 }
           - { gateway: 10.50.10.1, mask: 24 }
           - { gateway: 10.60.10.1, mask: 24 }
-    app_group: Ap-TnGISA-ENT
+    app_group: *GCORP_ENT_AP
     endpoint_group:
-      - name: Epg-TnGISA-ENT-VDI-POOL
+      - name: Epg-TnGCORP-ENT-VDI-POOL
     security_group:
-      - name: Esg-TnGISA-ENT-VDI-POOL
+      - name: Esg-TnGCORP-ENT-VDI-POOL
 
   - name: PoR1
-    tenant: Tn-TnPoR1-ENT
-    vrf: Vrf-TnPoR1-ENT
+    tenant: *POR1_ENT_TN
+    vrf: *POR1_ENT_VRF
     bridge_domain:
       - name: Bd-TnPoR1-ENT
         subnets:
           - { gateway: 10.70.10.1, mask: 24 }
           - { gateway: 10.80.10.1, mask: 24 }
           - { gateway: 10.90.10.1, mask: 24 }
-    app_group: Ap-TnPoR1-ENT
+    app_group: *POR1_ENT_AP
     endpoint_group:
       - name: Epg-TnPoR1-ENT
     security_group:

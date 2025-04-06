@@ -12,7 +12,20 @@
     validate_certs: no
 
   tasks:
-    name: debug vars
-    ansible.builtin.debug:
-      msg: "Tenants are {{ aci_services.tenant }}"
-    loop: "{{ aci_services }}"
+
+    - name: Display tenants
+      ansible.builtin.debug:
+        msg: |
+          {% for item in aci_services | map(attribute='tenant') | unique %}
+          {{ item }}
+          {% endfor %}
+
+    - name: dict test
+      ansible.builtin.debug:
+        msg: "{{ item.vrf }}, {{ item.tenant }}"
+      loop: "{{ aci_services | unique(attribute='vrf') }}"
+
+    - name: dict test 2
+      ansible.builtin.debug:
+        msg: "{{ item.tenant }}"
+      loop: "{{ aci_services | unique(attribute='tenant') }}"
