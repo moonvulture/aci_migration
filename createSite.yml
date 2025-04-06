@@ -1,0 +1,132 @@
+- name: Query tenants using supported ACI module
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - cisco.aci
+
+
+  vars:
+    apic_host: sandboxapicdc.cisco.com
+    username: admin
+    password: '!v3G@!4@Y'
+    validate_certs: no
+    tenant_name: super_tenant
+    vrf_name: super_vrf
+    ap_name: AP.enterprise_services
+    epg_name: EPG.enterprise_services
+    bridge_domains:
+      - name: Enterprise_Services
+        subnets:
+          - { gateway: 10.10.10.1, mask: 24 }
+          - { gateway: 20.10.10.1, mask: 24 }
+          - { gateway: 30.10.10.1, mask: 24 }
+      - name: ACAS_Services
+        subnets:
+          - { gateway: 10.10.20.1, mask: 24 }
+          - { gateway: 20.10.20.1, mask: 24 }
+      - name: ESXI_Services
+        subnets:
+          - { gateway: 10.10.30.1, mask: 24 }
+      - name: VDI_Services
+        subnets:
+          - { gateway: 10.10.40.1, mask: 24 }
+
+  tasks:
+        
+    # - name: Create tenant
+    #   cisco.aci.aci_tenant:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     state: present
+    #   delegate_to: localhost
+    #   register: result
+
+    # - name: Create VRF (Context)
+    #   cisco.aci.aci_vrf:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     vrf: "{{ vrf_name }}"
+    #     descr: Lab VRF
+    #     state: present
+    #   delegate_to: localhost
+
+    # - name: Create Bridge Domain
+    #   cisco.aci.aci_bd:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     bd: "{{ item.name }}"
+    #     vrf: "{{ vrf_name }}"
+    #     arp_flooding: false
+    #     enable_routing: true
+    #     state: present
+    #   delegate_to: localhost
+    #   loop: "{{ bridge_domains }}"
+
+
+    # - name: Add all subnets to each Bridge Domain
+    #   cisco.aci.aci_bd_subnet:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     bd: "{{ item.0.name }}"
+    #     gateway: "{{ item.1.gateway }}"
+    #     mask: "{{ item.1.mask }}"
+    #     scope: "private"
+    #     state: present
+    #   delegate_to: localhost
+    #   loop: "{{ bridge_domains | subelements('subnets') }}"
+
+    # - name: Create Application Profile
+    #   cisco.aci.aci_ap:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     app_profile: "{{ ap_name }}"
+    #     description: "App Profile for Enterprise Services"
+    #     state: present
+    #   delegate_to: localhost
+
+    - name: Create Application EPG
+      cisco.aci.aci_epg:
+        host: "{{ apic_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: "{{ validate_certs }}"
+        tenant: "{{ tenant_name }}"
+        ap: "{{ ap_name }}"
+        epg: "duplication_test"
+        bd: "Enterprise_Services"
+        state: present
+      delegate_to: localhost
+
+    - name: Bind EPG to static path with VLAN 600
+      cisco.aci.aci_static_binding_to_epg:
+        host: "{{ apic_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: "{{ validate_certs }}"
+        tenant: "{{ tenant_name }}"
+        ap: "{{ ap_name }}"
+        epg: "duplication_test"
+        interface_mode: "regular"
+        encap_id: "600"
+        deploy_immediacy: "immediate"
+        interface_type: "switch_port"
+        leafs: 101
+        pod_id: 1
+        interface: '1/10'
+        state: present
+      delegate_to: localhost

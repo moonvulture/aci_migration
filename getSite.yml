@@ -1,0 +1,170 @@
+- name: Query tenants using supported ACI module
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - cisco.aci
+
+  vars:
+    apic_host: sandboxapicdc.cisco.com
+    username: admin
+    password: '!v3G@!4@Y'
+    tenant_name: super_tenant
+    vrf_name: super_vrf
+    validate_certs: no
+    ap_name: AP.enterprise_services
+    epg_name: EPG.enterprise_services
+    bridge_domains:
+      - name: Enterprise_Services
+        subnets:
+          - { gateway: 10.10.10.1, mask: 24 }
+          - { gateway: 20.10.10.1, mask: 24 }
+          - { gateway: 30.10.10.1, mask: 24 }
+      - name: ACAS_Services
+        subnets:
+          - { gateway: 10.10.20.1, mask: 24 }
+          - { gateway: 20.10.20.1, mask: 24 }
+      - name: ESXI_Services
+        subnets:
+          - { gateway: 10.10.30.1, mask: 24 }
+      - name: VDI_Services
+        subnets:
+          - { gateway: 10.10.40.1, mask: 24 }
+    tenant_query: "{{ ('[].fvTenant.attributes.name') }}"
+    vrf_query: "{{ ('[].fvTenant.children[?fvCtx].fvCtx.attributes.name') }}"
+    bd_subnet_query: "{{ ('[].fvTenant.children[*].fvBD.children[?fvSubnet].fvSubnet.attributes.ip') }}"
+    bd_name_query: "{{ ('[].fvTenant.children[?fvBD].fvBD.attributes.name') }}"
+
+  tasks:
+    # - name: Query all tenants
+    #   cisco.aci.aci_tenant:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     state: query
+    #   delegate_to: localhost
+    #   register: query_result
+
+    # - name: Extract just tenant names
+    #   set_fact:
+    #     tenant_names: "{{ query_result.current | community.general.json_query(tenant_query) }}"
+
+    # - name: Print tenant names
+    #   debug:
+    #     msg: "{{ item }}"
+    #   loop: "{{ tenant_names }}"
+
+    # - name: Get VRF (Context)
+    #   cisco.aci.aci_vrf:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     state: query
+    #   delegate_to: localhost
+    #   register: vrf_results
+
+    # - name: Extract VRF names from tenant children
+    #   set_fact:
+    #     vrf_names: "{{ vrf_results.current | community.general.json_query(vrf_query) }}"
+
+    # - name: Print VRF names
+    #   debug:
+    #     msg: "{{ item }}"
+    #   loop: "{{ vrf_names }}"
+
+    # - name: query Bridge Domain
+    #   cisco.aci.aci_bd:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     vrf: "{{ vrf_name }}"
+    #     state: query
+    #   delegate_to: localhost
+    #   register: bd_output
+
+    # - name: Extract VRF names from tenant children
+    #   set_fact:
+    #     bd_names: "{{ bd_output.current | community.general.json_query(bd_name_query) }}"
+
+    # - name: Print Bridge Domain Names
+    #   debug:
+    #     msg: "{{ item }}"
+    #   loop: "{{ bd_names }}"
+    # - name: query subnets of bridge domains
+    #   cisco.aci.aci_bd_subnet:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenant_name }}"
+    #     state: query
+    #   delegate_to: localhost
+    #   register: bd_subnet_output
+
+    # - name: Extract subnets from BD
+    #   set_fact:
+    #     bd_subnets: "{{ bd_subnet_output.current | community.general.json_query(bd_subnet_query) }}"
+
+    # - name: print bd subnets
+    #   debug:
+    #     msg: "{{ item | flatten }}"
+    #   loop: "{{ bd_subnets }}"
+
+
+
+    # - name: Extract BD names and subnet IPs using JMESPath
+    #   set_fact:
+    #     bd_info: "{{ bd_subnet_output.current | community.general.json_query(bd_query) }}"
+    #   vars:
+    #     bd_query: >
+    #       [].fvTenant.children[?fvBD].fvBD.{name: attributes.name, subnets: children[?fvSubnet].fvSubnet.attributes.ip}
+
+    # - name: Print all subnets from ACI for each BD name
+    #   debug:
+    #     msg: "{{ item.name }} subnets from ACI: {{ subnets | join(', ') }}"
+    #   vars:
+    #     subnets: "{{ (
+    #       bd_subnet_output.current[0].fvTenant.children
+    #       | selectattr('fvBD.attributes.name', 'equalto', item.name)
+    #       | map(attribute='fvBD.children')
+    #       | list | first
+    #       | selectattr('fvSubnet', 'defined')
+    #       | map(attribute='fvSubnet.attributes.ip')
+    #       | list
+    #     ) | default(['NOT FOUND']) }}"
+    #   loop: "{{ bridge_domains }}"
+
+    - name: Query Application EPG
+      cisco.aci.aci_epg:
+        host: "{{ apic_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: "{{ validate_certs }}"
+        tenant: "ktm-nepal"
+        state: query
+      delegate_to: localhost
+      register: ep_output
+
+    - name: Print EPG
+      debug:
+        var: ep_output
+
+    - name: Get Binding
+      cisco.aci.aci_static_binding_to_epg:
+        host: "{{ apic_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: "{{ validate_certs }}"
+        tenant: "{{ tenant_name }}"
+        epg: "{{ epg_name }}"
+        state: query
+      delegate_to: localhost
+      register: binding_output
+
+    - name: 
+      debug:
+        var: binding_output
