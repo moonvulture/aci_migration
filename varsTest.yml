@@ -1,0 +1,18 @@
+---
+- name: Create ACI Services Schema
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars_files:
+    - schema.yml
+  vars:
+    apic_host: sandboxapicdc.cisco.com
+    username: admin
+    password: '!v3G@!4@Y'
+    validate_certs: no
+
+  tasks:
+    name: debug vars
+    ansible.builtin.debug:
+      msg: "Tenants are {{ aci_services.tenant }}"
+    loop: "{{ aci_services }}"
