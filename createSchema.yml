@@ -11,454 +11,455 @@
     validate_certs: no
 
   tasks:
-    - name: Create tenants
-      cisco.aci.aci_tenant:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item }}"
-        state: present
-      delegate_to: localhost
-      loop: "{{ aci_services | map(attribute='tenant') | unique }}"
+  #   - name: Create tenants
+  #     cisco.aci.aci_tenant:
+  #       host: "{{ apic_host }}"
+  #       username: "{{ username }}"
+  #       password: "{{ password }}"
+  #       validate_certs: "{{ validate_certs }}"
+  #       tenant: "{{ item }}"
+  #       state: present
+  #     delegate_to: localhost
+  #     loop: "{{ aci_services | map(attribute='tenant') | unique }}"
 
-    - name: Create VRFs
-      cisco.aci.aci_vrf:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        vrf: "{{ item.vrf }}"
-        state: present
-      delegate_to: localhost
-      loop: "{{ aci_services | unique(attribute='vrf') }}"
-      loop_control:
-        label: "{{ item.vrf }}/{{ item.tenant }}"
+  #   - name: Create VRFs
+  #     cisco.aci.aci_vrf:
+  #       host: "{{ apic_host }}"
+  #       username: "{{ username }}"
+  #       password: "{{ password }}"
+  #       validate_certs: "{{ validate_certs }}"
+  #       tenant: "{{ item.tenant }}"
+  #       vrf: "{{ item.vrf }}"
+  #       state: present
+  #     delegate_to: localhost
+  #     loop: "{{ aci_services | unique(attribute='vrf') }}"
+  #     loop_control:
+  #       label: "{{ item.vrf }}/{{ item.tenant }}"
 
-    - name: Create bridge domains
-      cisco.aci.aci_bd:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.0.tenant }}"
-        bd: "{{ item.1.name }}"
-        vrf: "{{ item.0.vrf }}"
-        arp_flooding: false
-        enable_routing: true
-        state: present
-      delegate_to: localhost
-      loop: "{{ aci_services | subelements('bridge_domain') }}"
-      loop_control:
-        label: "{{ item.0.tenant }}/{{ item.1.name }}"
+  #   - name: Create bridge domains
+  #     cisco.aci.aci_bd:
+  #       host: "{{ apic_host }}"
+  #       username: "{{ username }}"
+  #       password: "{{ password }}"
+  #       validate_certs: "{{ validate_certs }}"
+  #       tenant: "{{ item.0.tenant }}"
+  #       bd: "{{ item.1.name }}"
+  #       vrf: "{{ item.0.vrf }}"
+  #       arp_flooding: false
+  #       enable_routing: true
+  #       state: present
+  #     delegate_to: localhost
+  #     loop: "{{ aci_services | subelements('bridge_domain') }}"
+  #     loop_control:
+  #       label: "{{ item.0.tenant }}/{{ item.1.name }}"
 
-    - name: Flatten bridge domain + subnet list
-      set_fact:
-        bd_subnet_map: "{{ _bd_subnet_map | from_yaml }}"
-      vars:
-        _bd_subnet_map: |-
-          {% for svc in aci_services %}
-          {% for bd in svc.bridge_domain %}
-          {% for subnet in bd.subnets %}
-          - { tenant: {{ svc.tenant | to_json }}, bd: {{ bd.name | to_json }}, gateway: {{ subnet.gateway | to_json }}, mask: {{ subnet.mask | to_json }} }
-          {% endfor %}
-          {% endfor %}
-          {% endfor %}
+  #   - name: Flatten bridge domain + subnet list
+  #     set_fact:
+  #       bd_subnet_map: "{{ _bd_subnet_map | from_yaml }}"
+  #     vars:
+  #       _bd_subnet_map: |-
+  #         {% for svc in aci_services %}
+  #         {% for bd in svc.bridge_domain %}
+  #         {% for subnet in bd.subnets %}
+  #         - { tenant: {{ svc.tenant | to_json }}, bd: {{ bd.name | to_json }}, gateway: {{ subnet.gateway | to_json }}, mask: {{ subnet.mask | to_json }} }
+  #         {% endfor %}
+  #         {% endfor %}
+  #         {% endfor %}
 
-    - name: Add subnets to bridge domains
-      cisco.aci.aci_bd_subnet:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        bd: "{{ item.bd }}"
-        gateway: "{{ item.gateway }}"
-        mask: "{{ item.mask }}"
-        scope: "private"
-        state: present
-      delegate_to: localhost
-      loop: "{{ bd_subnet_map }}"
-      loop_control:
-        label: "{{ item.tenant }}/{{ item.bd }}/{{ item.gateway }}/{{ item.mask }}"
+  #   - name: Add subnets to bridge domains
+  #     cisco.aci.aci_bd_subnet:
+  #       host: "{{ apic_host }}"
+  #       username: "{{ username }}"
+  #       password: "{{ password }}"
+  #       validate_certs: "{{ validate_certs }}"
+  #       tenant: "{{ item.tenant }}"
+  #       bd: "{{ item.bd }}"
+  #       gateway: "{{ item.gateway }}"
+  #       mask: "{{ item.mask }}"
+  #       scope: "private"
+  #       state: present
+  #     delegate_to: localhost
+  #     loop: "{{ bd_subnet_map }}"
+  #     loop_control:
+  #       label: "{{ item.tenant }}/{{ item.bd }}/{{ item.gateway }}/{{ item.mask }}"
 
-    - name: Create unique application profiles for each tenant
-      cisco.aci.aci_ap:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        app_profile: "{{ item.app_group }}"
-        description: "Application Profile for {{ item.name }}"
-        state: present
-      delegate_to: localhost
-      loop: "{{ aci_services | unique(attribute='app_group') }}"
-      loop_control:
-        label: "{{ item.tenant }}/{{ item.app_group }}"
+  #   - name: Create unique application profiles for each tenant
+  #     cisco.aci.aci_ap:
+  #       host: "{{ apic_host }}"
+  #       username: "{{ username }}"
+  #       password: "{{ password }}"
+  #       validate_certs: "{{ validate_certs }}"
+  #       tenant: "{{ item.tenant }}"
+  #       app_profile: "{{ item.app_group }}"
+  #       description: "Application Profile for {{ item.name }}"
+  #       state: present
+  #     delegate_to: localhost
+  #     loop: "{{ aci_services | unique(attribute='app_group') }}"
+  #     loop_control:
+  #       label: "{{ item.tenant }}/{{ item.app_group }}"
 
-    - name: Create endpoint groups
-      cisco.aci.aci_epg:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.0.tenant }}"
-        ap: "{{ item.0.app_group }}"
-        epg: "{{ item.1.name }}"
-        bd: "{{ item.0.bridge_domain[0].name }}"
-        state: present
-      delegate_to: localhost
-      loop: "{{ aci_services | subelements('endpoint_group') }}"
-      loop_control:
-        label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
+  #   - name: Create endpoint groups
+  #     cisco.aci.aci_epg:
+  #       host: "{{ apic_host }}"
+  #       username: "{{ username }}"
+  #       password: "{{ password }}"
+  #       validate_certs: "{{ validate_certs }}"
+  #       tenant: "{{ item.0.tenant }}"
+  #       ap: "{{ item.0.app_group }}"
+  #       epg: "{{ item.1.name }}"
+  #       bd: "{{ item.0.bridge_domain[0].name }}"
+  #       state: present
+  #     delegate_to: localhost
+  #     loop: "{{ aci_services | subelements('endpoint_group') }}"
+  #     loop_control:
+  #       label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
 
-    - name: Create endpoint security groups
-      cisco.aci.aci_esg:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.0.tenant }}"
-        ap: "{{ item.0.app_group }}"
-        esg: "{{ item.1.name }}"
-        vrf: "{{ item.0.vrf }}"
-        state: present
-      delegate_to: localhost
-      loop: "{{ aci_services | subelements('security_group') }}"
-      loop_control:
-        label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
+  #   - name: Create endpoint security groups
+  #     cisco.aci.aci_esg:
+  #       host: "{{ apic_host }}"
+  #       username: "{{ username }}"
+  #       password: "{{ password }}"
+  #       validate_certs: "{{ validate_certs }}"
+  #       tenant: "{{ item.0.tenant }}"
+  #       ap: "{{ item.0.app_group }}"
+  #       esg: "{{ item.1.name }}"
+  #       vrf: "{{ item.0.vrf }}"
+  #       state: present
+  #     delegate_to: localhost
+  #     loop: "{{ aci_services | subelements('security_group') }}"
+  #     loop_control:
+  #       label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
 
-    - name: Create L4-L7 Application Profile
-      cisco.aci.aci_ap:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenants.TRANSIT }}"
-        ap: "{{ app_groups.TRANSIT }}"
-        description: "Application Profile for FTDv Service Graph"
-        state: present
-
-    - name: Create Contract for All ESG Traffic
-      cisco.aci.aci_contract:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenants.TRANSIT }}"
-        contract: "ESG-Inspect-Contract"
-        description: "Contract for ESG traffic inspection via FTDv"
-        scope: tenant
-        state: present
-      register: inspect_contract_status
-
-    - name: Create ESG Inspection Contract Subject
-      cisco.aci.aci_contract_subject:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenants.TRANSIT }}"
-        contract: "ESG-Inspect-Contract"
-        subject: "inspect-all"
-        state: present
-
-    - name: Create Filter for All Traffic
-      cisco.aci.aci_filter:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenants.TRANSIT }}"
-        filter: "permit-any"
-        description: "Allow all traffic"
-        state: present
-
-    - name: Create Filter Entry for All Traffic
-      cisco.aci.aci_filter_entry:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenants.TRANSIT }}"
-        filter: "permit-any"
-        entry: "any"
-        ether_type: unspecified
-        state: present
-      register: filter_entry_status
-
-    - name: Bind Filter to Contract Subject
-      cisco.aci.aci_contract_subject_to_filter:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ tenants.TRANSIT }}"
-        contract: "ESG-Inspect-Contract"
-        subject: "inspect-all"
-        filter: "permit-any"
-        state: present
-      register: subject_filter_status
-
-
-    - name: Create list of unique tenant/VRF combinations
-      set_fact:
-        tenant_vrf_combinations: "{{ tenant_vrf_combinations | default([]) + [{'tenant': item.tenant, 'vrf': item.vrf, 'app_group': item.app_group}] }}"
-      loop: "{{ aci_services }}"
-      loop_control:
-        label: "{{ item.tenant }}/{{ item.vrf }}"
-      when: not (tenant_vrf_combinations | default([]) | selectattr('tenant', 'equalto', item.tenant) | selectattr('vrf', 'equalto', item.vrf) | list | length > 0)
-    
-    # Get unique combinations (ensure unique items)
-    - name: Filter unique tenant/VRF combinations 
-      set_fact:
-        unique_tenant_vrfs: "{{ tenant_vrf_combinations | unique }}"
-    
-    # Display unique tenant/VRF combinations for debugging
-    - name: Display Unique Tenant/VRF Combinations
-      debug:
-        msg: "Will create catch-all ESG for Tenant: {{ item.tenant }}, VRF: {{ item.vrf }}, App Profile: {{ item.app_group }}"
-      loop: "{{ unique_tenant_vrfs }}"
-    
-    # Create a catch-all application profile for each tenant if needed
-    - name: Create Catch-All Application Profiles
-      cisco.aci.aci_ap:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        ap: "{{ item.app_group }}"
-        description: "Application Profile for ESG Migration"
-        state: present
-      loop: "{{ unique_tenant_vrfs }}"
-      register: ap_status
-    
-    # Create catch-all ESG for each VRF
-    - name: Create Catch-All ESG for each VRF
-      cisco.aci.aci_esg:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        ap: "{{ item.app_group }}"
-        esg: "ESG-{{ item.vrf }}-AllEPGs"
-        vrf: "{{ item.vrf }}"
-        description: "Catch-all ESG for all EPGs in {{ item.vrf }}"
-        state: present
-      loop: "{{ unique_tenant_vrfs }}"
-      register: catchall_esg_status
-    
-    # Get all EPGs for each tenant/VRF combination
-    - name: Get All EPGs for Each Tenant/VRF
-      cisco.aci.aci_rest:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        method: get
-        path: /api/node/class/fvAEPg.json?query-target-filter=wcard(fvAEPg.dn,"{{ item.tenant }}")
-      loop: "{{ unique_tenant_vrfs }}"
-      register: epg_query_results
-    
-    # Create EPG Selectors for the Catch-All ESG - For each tenant/VRF
-    - name: Create EPG Selectors for Catch-All ESGs per VRF
-      cisco.aci.aci_rest:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        method: post
-        path: /api/mo/uni/tn-{{ item.0.tenant }}/ap-{{ item.0.app_group }}/esg-ESG-{{ item.0.vrf }}-AllEPGs.json
-        content:
-          fvESg:
-            children:
-              - fvEPSelector:
-                  attributes:
-                    name: "sel_{{ item.1.dn | regex_replace('^.*/') }}"
-                    matchEpgDn: "{{ item.1.dn }}"
-      loop: "{{ unique_tenant_vrfs | product(epg_query_results.results | map(attribute='response') | map('from_json') | map(attribute='imdata') | map('flatten') | list | flatten) | list }}"
-      when: 
-        # Check if EPG belongs to the tenant we're processing
-        - "'{{ item.0.tenant }}' in item.1.dn"
-        # Check if the EPG is in the ACI bridge domain that we're interested in
-        # This requires ACI REST API queries to map EPGs to BDs to VRFs
-        # For simplicity, we're including all EPGs in the tenant
-      loop_control:
-        label: "{{ item.0.tenant }}/{{ item.0.vrf }}/{{ item.1.dn | regex_replace('^.*/') }}"
-      register: epg_selector_status
-    
-    # Create permit-all contract for intra-VRF communication 
-    - name: Create Permit-Any Contract for Intra-VRF Traffic
-      cisco.aci.aci_contract:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        contract: "permit-any-{{ item.vrf }}"
-        description: "Allow all traffic within {{ item.vrf }}"
-        scope: context
-        state: present
-      loop: "{{ unique_tenant_vrfs }}"
-      register: permit_contract_status
-    
-    # Create contract subject 
-    - name: Create Contract Subject
-      cisco.aci.aci_contract_subject:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        contract: "permit-any-{{ item.vrf }}"
-        subject: "permit-any-subject"
-        state: present
-      loop: "{{ unique_tenant_vrfs }}"
-      register: contract_subject_status
-    
-    # Create filter for all traffic
-    - name: Create Filter for All Traffic
-      cisco.aci.aci_filter:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        filter: "permit-any-filter"
-        description: "Allow all traffic"
-        state: present
-      loop: "{{ unique_tenant_vrfs | map(attribute='tenant') | unique | list }}"
-      register: filter_status
-    
-    # Create filter entry for all traffic
-    - name: Create Filter Entry for All Traffic
-      cisco.aci.aci_filter_entry:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        filter: "permit-any-filter"
-        entry: "permit-all"
-        ether_type: unspecified
-        state: present
-      loop: "{{ unique_tenant_vrfs | map(attribute='tenant') | unique | list }}"
-      register: filter_entry_status
-    
-    # Bind filter to contract subject
-    - name: Bind Filter to Contract Subject
-      cisco.aci.aci_contract_subject_to_filter:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        contract: "permit-any-{{ item.vrf }}"
-        subject: "permit-any-subject"
-        filter: "permit-any-filter"
-        state: present
-      loop: "{{ unique_tenant_vrfs }}"
-      register: subject_filter_status
-      
-    # Make ESG both provide and consume the permit-any contract
-    - name: Make ESG Provide Permit-Any Contract
-      cisco.aci.aci_esg_contract:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        ap: "{{ item.app_group }}"
-        esg: "ESG-{{ item.vrf }}-AllEPGs"
-        contract: "permit-any-{{ item.vrf }}"
-        contract_type: provider
-        state: present
-      loop: "{{ unique_tenant_vrfs }}"
-      register: esg_provider_status
-    
-    - name: Make ESG Consume Permit-Any Contract
-      cisco.aci.aci_esg_contract:
-        host: "{{ apic_host }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
-        tenant: "{{ item.tenant }}"
-        ap: "{{ item.app_group }}"
-        esg: "ESG-{{ item.vrf }}-AllEPGs"
-        contract: "permit-any-{{ item.vrf }}"
-        contract_type: consumer
-        state: present
-      loop: "{{ unique_tenant_vrfs }}"
-      register: esg_consumer_status
-    
-    # Output Task Results
-    - name: Print Task Results Summary
-      debug:
-        msg: "Catch-all ESGs have been created for all VRFs across all tenants to support migration!"
-
-#phase 2 deployment
-    # - name: Create contracts
-    #   cisco.aci.aci_contract:
+    # - name: Create catch-all ESGs per VRF
+    #   cisco.aci.aci_esg:
     #     host: "{{ apic_host }}"
     #     username: "{{ username }}"
     #     password: "{{ password }}"
     #     validate_certs: "{{ validate_certs }}"
     #     tenant: "{{ item.tenant }}"
-    #     contract: "{{ item.name }}"
+    #     ap: "{{ item.app_group }}"
+    #     esg: "Esg-{{ item.vrf }}-CATCHALL"
+    #     vrf: "{{ item.vrf }}"
     #     state: present
     #   delegate_to: localhost
-    #   loop: "{{ contracts }}"
+    #   loop: "{{ aci_services | unique(attribute='vrf') }}"
     #   loop_control:
-    #     label: "{{ item.tenant }}/{{ item.name }}"
+    #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
 
-    # - name: Create contract subjects with filters
-    #   cisco.aci.aci_contract_subject:
-    #     host: "{{ apic_host }}"
-    #     username: "{{ username }}"
-    #     password: "{{ password }}"
-    #     validate_certs: "{{ validate_certs }}"
-    #     tenant: "{{ item.tenant }}"
-    #     contract: "{{ item.name }}"
-    #     subject: "subject-{{ item.name }}"
-    #     reverse_filter: yes
-    #     state: present
-    #   delegate_to: localhost
-    #   loop: "{{ contracts }}"
-    #   loop_control:
-    #     label: "{{ item.tenant }}/{{ item.name }}/subject"
-
-    # - name: Bind contract to consumers
-    #   cisco.aci.aci_esg_contract:
+    # - name: Associate EPGs to their catch-all ESG by VRF
+    #   cisco.aci.aci_esg_epg_selector:
     #     host: "{{ apic_host }}"
     #     username: "{{ username }}"
     #     password: "{{ password }}"
     #     validate_certs: "{{ validate_certs }}"
     #     tenant: "{{ item.0.tenant }}"
-    #     esg: "{{ item.1 }}"
-    #     contract: "{{ item.0.name }}"
-    #     contract_type: consumer
+    #     ap: "{{ item.0.app_group }}"
+    #     epg_ap: "{{ item.0.app_group }}"
+    #     epg: "{{ item.1.name }}"
+    #     esg: "Esg-{{ item.0.vrf }}-CATCHALL"
     #     state: present
     #   delegate_to: localhost
-    #   loop: "{{ contracts | subelements('consumers') }}"
+    #   loop: "{{ aci_services | subelements('endpoint_group') }}"
     #   loop_control:
-    #     label: "{{ item.0.name }}/consumer/{{ item.1 }}"
+    #     label: "{{ item.0.app_group }}/{{ item.1.name }} → Esg-{{ item.0.vrf }}-CATCHALL"
 
-    # - name: Bind contract to provider
-    #   cisco.aci.aci_esg_contract:
+    # - name: Create catch-all contract in each vrf
+    #   cisco.aci.aci_contract:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ item }}"
+    #     contract: "Contract-Permit-All"
+    #     scope: tenant
+    #     state: present
+    #   delegate_to: localhost
+    #   loop: "{{ aci_services | map(attribute='tenant') | unique }}"
+
+    # - name: Add a new contract to ESG binding
+    #   cisco.aci.aci_esg_to_contract:
     #     host: "{{ apic_host }}"
     #     username: "{{ username }}"
     #     password: "{{ password }}"
     #     validate_certs: "{{ validate_certs }}"
     #     tenant: "{{ item.tenant }}"
-    #     esg: "{{ item.provider }}"
-    #     contract: "{{ item.name }}"
+    #     ap: "{{ item.app_group }}"
+    #     esg: "Esg-{{ item.vrf }}-CATCHALL"
+    #     contract: "Contract-Permit-All"
     #     contract_type: provider
     #     state: present
     #   delegate_to: localhost
-    #   loop: "{{ contracts }}"
+    #   loop: "{{ aci_services | unique(attribute='vrf') }}"
     #   loop_control:
-    #     label: "{{ item.name }}/provider/{{ item.provider }}"
+    #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
+
+    # - name: Add a new contract to ESG binding
+    #   cisco.aci.aci_esg_to_contract:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ item.tenant }}"
+    #     ap: "{{ item.app_group }}"
+    #     esg: "Esg-{{ item.vrf }}-CATCHALL"
+    #     contract: "Contract-Permit-All"
+    #     contract_type: consumer
+    #     state: present
+    #   delegate_to: localhost
+    #   loop: "{{ aci_services | unique(attribute='vrf') }}"
+    #   loop_control:
+    #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
+
+# create subjects
+# create filters
+
+# phase 2 
+# bind epgs to esg per vrf
+
+
+
+    # - name: Create ESG Inspection Contract Subject
+    #   cisco.aci.aci_contract_subject:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenants.TRANSIT }}"
+    #     contract: "ESG-Inspect-Contract"
+    #     subject: "inspect-all"
+    #     state: present
+
+    # - name: Create Filter for All Traffic
+    #   cisco.aci.aci_filter:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ tenants.TRANSIT }}"
+    #     filter: "permit-any"
+    #     description: "Allow all traffic"
+    #     state: present
+    #   delegate_to: localhost
+    #   loop: "{{ aci_services | subelements('security_group') }}"
+    #   loop_control:
+    #     label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
+
+#     - name: Create Filter Entry for All Traffic
+#       cisco.aci.aci_filter_entry:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ tenants.TRANSIT }}"
+#         filter: "permit-any"
+#         entry: "any"
+#         ether_type: unspecified
+#         state: present
+#       register: filter_entry_status
+
+#     - name: Bind Filter to Contract Subject
+#       cisco.aci.aci_contract_subject_to_filter:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ tenants.TRANSIT }}"
+#         contract: "ESG-Inspect-Contract"
+#         subject: "inspect-all"
+#         filter: "permit-any"
+#         state: present
+#       register: subject_filter_status
+
+
+#     - name: Create list of unique tenant/VRF combinations
+#       set_fact:
+#         tenant_vrf_combinations: "{{ tenant_vrf_combinations | default([]) + [{'tenant': item.tenant, 'vrf': item.vrf, 'app_group': item.app_group}] }}"
+#       loop: "{{ aci_services }}"
+#       loop_control:
+#         label: "{{ item.tenant }}/{{ item.vrf }}"
+#       when: not (tenant_vrf_combinations | default([]) | selectattr('tenant', 'equalto', item.tenant) | selectattr('vrf', 'equalto', item.vrf) | list | length > 0)
+    
+#     # Get unique combinations (ensure unique items)
+#     - name: Filter unique tenant/VRF combinations 
+#       set_fact:
+#         unique_tenant_vrfs: "{{ tenant_vrf_combinations | unique }}"
+    
+#     # Display unique tenant/VRF combinations for debugging
+#     - name: Display Unique Tenant/VRF Combinations
+#       debug:
+#         msg: "Will create catch-all ESG for Tenant: {{ item.tenant }}, VRF: {{ item.vrf }}, App Profile: {{ item.app_group }}"
+#       loop: "{{ unique_tenant_vrfs }}"
+    
+#     # Create a catch-all application profile for each tenant if needed
+#     - name: Create Catch-All Application Profiles
+#       cisco.aci.aci_ap:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         ap: "{{ item.app_group }}"
+#         description: "Application Profile for ESG Migration"
+#         state: present
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: ap_status
+    
+#     # Create catch-all ESG for each VRF
+#     - name: Create Catch-All ESG for each VRF
+#       cisco.aci.aci_esg:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         ap: "{{ item.app_group }}"
+#         esg: "ESG-{{ item.vrf }}-AllEPGs"
+#         vrf: "{{ item.vrf }}"
+#         description: "Catch-all ESG for all EPGs in {{ item.vrf }}"
+#         state: present
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: catchall_esg_status
+    
+#     # Get all EPGs for each tenant/VRF combination
+#     - name: Get All EPGs for Each Tenant/VRF
+#       cisco.aci.aci_rest:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         method: get
+#         path: /api/node/class/fvAEPg.json?query-target-filter=wcard(fvAEPg.dn,"{{ item.tenant }}")
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: epg_query_results
+    
+
+#     # Create EPG Selectors for the Catch-All ESG - For each tenant/VRF
+#     - name: Create EPG Selectors for Catch-All ESGs per VRF
+#       cisco.aci.aci_rest:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         method: post
+#         path: /api/mo/uni/tn-{{ item.0.tenant }}/ap-{{ item.0.app_group }}/esg-ESG-{{ item.0.vrf }}-AllEPGs.json
+#         content:
+#           fvESg:
+#             children:
+#               - fvEPSelector:
+#                   attributes:
+#                     name: "sel_{{ item.1.dn | regex_replace('^.*/') }}"
+#                     matchEpgDn: "{{ item.1.dn }}"
+#       loop: "{{ unique_tenant_vrfs | product(epg_query_results.results | map(attribute='response') | map('from_json') | map(attribute='imdata') | map('flatten') | list | flatten) | list }}"
+#       when: 
+#         # Check if EPG belongs to the tenant we're processing
+#         - "'{{ item.0.tenant }}' in item.1.dn"
+#         # Check if the EPG is in the ACI bridge domain that we're interested in
+#         # This requires ACI REST API queries to map EPGs to BDs to VRFs
+#         # For simplicity, we're including all EPGs in the tenant
+#       loop_control:
+#         label: "{{ item.0.tenant }}/{{ item.0.vrf }}/{{ item.1.dn | regex_replace('^.*/') }}"
+#       register: epg_selector_status
+    
+#     # Create permit-all contract for intra-VRF communication 
+#     - name: Create Permit-Any Contract for Intra-VRF Traffic
+#       cisco.aci.aci_contract:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         contract: "permit-any-{{ item.vrf }}"
+#         description: "Allow all traffic within {{ item.vrf }}"
+#         scope: context
+#         state: present
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: permit_contract_status
+    
+#     # Create contract subject 
+#     - name: Create Contract Subject
+#       cisco.aci.aci_contract_subject:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         contract: "permit-any-{{ item.vrf }}"
+#         subject: "permit-any-subject"
+#         state: present
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: contract_subject_status
+    
+#     # Create filter for all traffic
+#     - name: Create Filter for All Traffic
+#       cisco.aci.aci_filter:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         filter: "permit-any-filter"
+#         description: "Allow all traffic"
+#         state: present
+#       loop: "{{ unique_tenant_vrfs | map(attribute='tenant') | unique | list }}"
+#       register: filter_status
+    
+#     # Create filter entry for all traffic
+#     - name: Create Filter Entry for All Traffic
+#       cisco.aci.aci_filter_entry:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         filter: "permit-any-filter"
+#         entry: "permit-all"
+#         ether_type: unspecified
+#         state: present
+#       loop: "{{ unique_tenant_vrfs | map(attribute='tenant') | unique | list }}"
+#       register: filter_entry_status
+    
+#     # Bind filter to contract subject
+#     - name: Bind Filter to Contract Subject
+#       cisco.aci.aci_contract_subject_to_filter:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         contract: "permit-any-{{ item.vrf }}"
+#         subject: "permit-any-subject"
+#         filter: "permit-any-filter"
+#         state: present
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: subject_filter_status
+      
+#     # Make ESG both provide and consume the permit-any contract
+#     - name: Make ESG Provide Permit-Any Contract
+#       cisco.aci.aci_esg_contract:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         ap: "{{ item.app_group }}"
+#         esg: "ESG-{{ item.vrf }}-AllEPGs"
+#         contract: "permit-any-{{ item.vrf }}"
+#         contract_type: provider
+#         state: present
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: esg_provider_status
+    
+#     - name: Make ESG Consume Permit-Any Contract
+#       cisco.aci.aci_esg_contract:
+#         host: "{{ apic_host }}"
+#         username: "{{ username }}"
+#         password: "{{ password }}"
+#         validate_certs: "{{ validate_certs }}"
+#         tenant: "{{ item.tenant }}"
+#         ap: "{{ item.app_group }}"
+#         esg: "ESG-{{ item.vrf }}-AllEPGs"
+#         contract: "permit-any-{{ item.vrf }}"
+#         contract_type: consumer
+#         state: present
+#       loop: "{{ unique_tenant_vrfs }}"
+#       register: esg_consumer_status
