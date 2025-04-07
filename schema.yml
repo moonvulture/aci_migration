@@ -3,16 +3,27 @@
 tenants:
   GCORP_ENT: &GCORP_ENT_TN Tn-GCORP-ENT
   PoR_ENT: &POR1_ENT_TN Tn-PoR1-ENT
+  TRANSIT: &TRANSIT_TN Tn-TRANSIT-FTD
 vrfs:
   GCORP_ENT: &GCORP_ENT_VRF Vrf-TnGCORP-ENT
   GCORP_VDI: &GCORP_VDI_VRF Vrf-TnGCORP-VDI
   PoR1_ENT: &POR1_ENT_VRF Vrf-TnPoR1-ENT
+  TRANSIT: &TRANSIT_VRF Vrf-TnTRANSIT
 app_groups:
   GCORP_ENT: &GCORP_ENT_AP Ap-TnGCORP-ENT
   POR_ENT: &POR1_ENT_AP Ap-TnPoR1-ENT
   GCORP_VDI: &GCORP_VDI_AP Ap-TnGCORP-VDI
+  TRANSIT: &TRANSIT_AP Ap-TnTRANSIT-FTD
 
-#esg based dict
+ftd_params:
+    ftdv_tenant: *TRANSIT_TN
+    ftdv_device_name: &TRANSIT_NAME GCORPXGCFWV001
+    ftdv_consumer_bd: &TRANSIT_BD_IN Bd-TnTRANSIT-FTD-CONSUMER
+    ftdv_provider_bd: &TRANSIT_BD_OUT Bd-TnTRANSIT-FTD-PROVIDER
+    ftdv_consumer_ip: &TRANSIT_IP_IN 192.168.1.1
+    ftdv_provider_ip: &TRANSIT_IP_OUT 192.168.2.1
+    ftdv_mgmt_ip: &TRANSIT_MGMT 10.1.1.1
+
 aci_services:
   - name: Active_Directory
     tenant: *GCORP_ENT_TN
@@ -178,3 +189,44 @@ aci_services:
       - name: Epg-TnPoR1-ENT
     security_group:
       - name: Esg-TnPoR1-ENT
+
+  - name: FTDv Consumer Transit Zone
+    tenant: *TRANSIT_TN
+    vrf: *TRANSIT_VRF
+    bridge_domain:
+      - name: *TRANSIT_BD_IN
+        subnets:
+          - { gateway: *TRANSIT_IP_IN, mask: 24 }
+    app_group: *TRANSIT_AP
+    endpoint_group:
+      - name: Epg-TnTRANSIT-FTD
+    security_group:
+      - name: Esg-TnTRANSIT-FTD
+
+  - name: FTDv Provider Transit Zone
+    tenant: *TRANSIT_TN
+    vrf: *TRANSIT_VRF
+    bridge_domain:
+      - name: *TRANSIT_BD_OUT
+        subnets:
+          - { gateway: *TRANSIT_IP_OUT, mask: 24 }
+    app_group: *TRANSIT_AP
+    endpoint_group:
+      - name: Epg-TnTRANSIT-FTD
+    security_group:
+      - name: Esg-TnTRANSIT-FTD
+
+contracts:
+  - name: Contract-DNS
+    tenant: *GCORP_ENT_TN
+    provider: Esg-TnGCORP-ENT-DOMAIN-DNS
+    consumers:
+      - Esg-TnGCORP-ENT-SERVICES-EXCH
+      - Esg-TnGCORP-ENT-ACAS-EPO
+      - Esg-TnGCORP-ENT-ACAS-SENSORS
+      - Esg-TnGCORP-ENT-NET-MGMT
+      - Esg-TnGCORP-ENT-NET-ISE
+      - Esg-TnGCORP-ENT-VDI-MASTER
+      - Esg-TnGCORP-ENT-VDI-POOL
+    filter: tcp_udp_53
+    graph: Graph-FTDv
