@@ -163,6 +163,7 @@
     #   loop_control:
     #     label: "{{ item.0.app_group }}/{{ item.1.name }} → Esg-{{ item.0.vrf }}-CATCHALL"
 
+
     # - name: Create catch-all contract in each vrf
     #   cisco.aci.aci_contract:
     #     host: "{{ apic_host }}"
@@ -193,6 +194,23 @@
     #   loop_control:
     #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
 
+    - name: Create endpoint security groups
+      cisco.aci.aci_esg_to_contract:
+        host: "{{ apic_host }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: "{{ validate_certs }}"
+        tenant: "{{ item.0.tenant }}"
+        ap: "{{ item.0.app_group }}"
+        esg: "{{ item.1.name }}"
+        contract: "Contract-Permit-All"
+        contract_type: provider
+        state: present
+      delegate_to: localhost
+      loop: "{{ aci_services | subelements('security_group') }}"
+      loop_control:
+        label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
+
     # - name: Add a new contract to ESG binding
     #   cisco.aci.aci_esg_to_contract:
     #     host: "{{ apic_host }}"
@@ -210,7 +228,6 @@
     #   loop_control:
     #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
 
-# create subjects
 # create filters
 
 # phase 2 
@@ -224,10 +241,14 @@
     #     username: "{{ username }}"
     #     password: "{{ password }}"
     #     validate_certs: "{{ validate_certs }}"
-    #     tenant: "{{ tenants.TRANSIT }}"
-    #     contract: "ESG-Inspect-Contract"
+    #     tenant: "{{ item.tenant }}"
+    #     contract: "Contract-Permit-All"
     #     subject: "inspect-all"
     #     state: present
+    #   delegate_to: localhost
+    #   loop: "{{ aci_services | unique(attribute='vrf') }}"
+    #   loop_control:
+    #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
 
     # - name: Create Filter for All Traffic
     #   cisco.aci.aci_filter:
@@ -235,37 +256,41 @@
     #     username: "{{ username }}"
     #     password: "{{ password }}"
     #     validate_certs: "{{ validate_certs }}"
-    #     tenant: "{{ tenants.TRANSIT }}"
+    #     tenant: "{{ item.tenant }}"
     #     filter: "permit-any"
     #     description: "Allow all traffic"
     #     state: present
     #   delegate_to: localhost
-    #   loop: "{{ aci_services | subelements('security_group') }}"
+    #   loop: "{{ aci_services | unique(attribute='tenant') }}"
     #   loop_control:
-    #     label: "{{ item.0.tenant }}/{{ item.0.app_group }}/{{ item.1.name }}"
+    #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
 
-#     - name: Create Filter Entry for All Traffic
-#       cisco.aci.aci_filter_entry:
-#         host: "{{ apic_host }}"
-#         username: "{{ username }}"
-#         password: "{{ password }}"
-#         validate_certs: "{{ validate_certs }}"
-#         tenant: "{{ tenants.TRANSIT }}"
-#         filter: "permit-any"
-#         entry: "any"
-#         ether_type: unspecified
-#         state: present
-#       register: filter_entry_status
+    # - name: Create Filter Entry for All Traffic
+    #   cisco.aci.aci_filter_entry:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ item.tenant }}"
+    #     filter: "permit-any"
+    #     entry: "any"
+    #     ether_type: unspecified
+    #     state: present
+    #   loop: "{{ aci_services | unique(attribute='tenant') }}"
+    #   loop_control:
+    #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
 
-#     - name: Bind Filter to Contract Subject
-#       cisco.aci.aci_contract_subject_to_filter:
-#         host: "{{ apic_host }}"
-#         username: "{{ username }}"
-#         password: "{{ password }}"
-#         validate_certs: "{{ validate_certs }}"
-#         tenant: "{{ tenants.TRANSIT }}"
-#         contract: "ESG-Inspect-Contract"
-#         subject: "inspect-all"
-#         filter: "permit-any"
-#         state: present
-#       register: subject_filter_status
+    # - name: Bind Filter to Contract Subject
+    #   cisco.aci.aci_contract_subject_to_filter:
+    #     host: "{{ apic_host }}"
+    #     username: "{{ username }}"
+    #     password: "{{ password }}"
+    #     validate_certs: "{{ validate_certs }}"
+    #     tenant: "{{ item.tenant }}"
+    #     contract: "Contract-Permit-All"
+    #     subject: "inspect-all"
+    #     filter: "permit-any"
+    #     state: present
+    #   loop: "{{ aci_services | unique(attribute='tenant') }}"
+    #   loop_control:
+    #     label: "{{ item.tenant }}/{{ item.vrf }}/Esg-{{ item.vrf }}-CATCHALL"
